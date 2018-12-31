@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 ArcBall.py -- Math utilities, vector, matrix types and ArcBall quaternion rotation class
 
@@ -64,7 +65,7 @@ class ArcBallT:
         NewVec = Vector3fT ()
         # //Copy paramter into temp point
         TempPt = copy.copy (NewPt)
-        if printDebugInfo: print 'NewPt', NewPt, TempPt
+        if printDebugInfo: print('NewPt', NewPt, TempPt)
         # //Adjust point coords and scale down to range of [-1 ... 1]
         TempPt [X] = (NewPt [X] * self.m_AdjustWidth) - 1.0
         TempPt [Y] = 1.0 - (NewPt [Y] * self.m_AdjustHeight)
@@ -118,7 +119,8 @@ class ArcBallT:
             NewRot[W] = Vector3fDot(self.m_StVec, self.m_EnVec);
         else:		#                            //if its zero
             # //The begin and end vectors coincide, so return a quaternion of zero matrix (no rotation)
-            NewRot.X = NewRot.Y = NewRot.Z = NewRot.W = 0.0;
+            #NewRot.X = NewRot.Y = NewRot.Z = NewRot.W = 0.0;
+            NewRot[X] = NewRot[Y] = NewRot[Z] = NewRot[W] = 0.0;
                 
         return NewRot
 
@@ -240,7 +242,7 @@ def Matrix3fSetRotationFromQuat4f (q1):
 def unit_test_ArcBall_module ():
     # Unit testing of the ArcBall calss and the real math behind it.
     # Simulates a click and drag followed by another click and drag.
-    print "unit testing ArcBall"
+    print("unit testing ArcBall")
     Transform = Matrix4fT ()
     LastRot = Matrix3fT ()
     ThisRot = Matrix3fT ()
@@ -261,21 +263,21 @@ def unit_test_ArcBall_module ():
     # print ArcBall
     # print
     # print
-    print "Quat for first drag"
-    print ThisQuat
+    print("Quat for first drag")
+    print(ThisQuat)
     ThisRot = Matrix3fSetRotationFromQuat4f (ThisQuat)
     # Linear Algebra matrix multiplication A = old, B = New : C = A * B
     ThisRot = Matrix3fMulMatrix3f (LastRot, ThisRot)
     Transform = Matrix4fSetRotationFromMatrix3f (Transform, ThisRot)
-    print "First transform"
-    print Transform
+    print("First transform")
+    print(Transform)
     # Done with first drag
 
 
     # second click
     LastRot = copy.copy (ThisRot)
-    print "LastRot at end of first drag"
-    print LastRot
+    print("LastRot at end of first drag")
+    print(LastRot)
     mouse_pt = Point2fT (350,260)
     ArcBall.click (mouse_pt)
     # second drag
@@ -283,14 +285,14 @@ def unit_test_ArcBall_module ():
     ThisQuat = ArcBall.drag (mouse_pt)
     # print "The ArcBall"
     # print ArcBall
-    print "Quat for second drag"
-    print ThisQuat
+    print("Quat for second drag")
+    print(ThisQuat)
     ThisRot = Matrix3fSetRotationFromQuat4f (ThisQuat)
     ThisRot = Matrix3fMulMatrix3f (LastRot, ThisRot)
     # print ThisRot
     Transform = Matrix4fSetRotationFromMatrix3f (Transform, ThisRot)
-    print "Second transform"
-    print Transform
+    print("Second transform")
+    print(Transform)
     # Done with second drag
     LastRot = copy.copy (ThisRot)
 
