@@ -1,5 +1,13 @@
+fullscreen = False 
+debugDisplay = False
+hitsOnly = False
+screenW = 800
+screenH = 600
 subdet = 0
 event = 2
+layerSpacing = 0.8 
 camera = None
 player = None
 _keys = dict()
+startPos = (0.,0.,-30.)
+alphaExp = 1.0

@@ -5,7 +5,6 @@ Visualization of HGCal wafer energies using OpenGL and compatible with python 2 
 - PyOpenGL: Detailed instructions can be found [here](http://pyopengl.sourceforge.net/documentation/installation.html)
 ```
 pip install PyOpenGL PyOpenGL_accelerate Pillow numpy pandas
-
 ```
  
 

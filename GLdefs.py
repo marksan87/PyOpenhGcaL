@@ -25,9 +25,11 @@ from globals import *
 import config
 #from config import subdet as subdet
 #from config import _keys as _keys
-PI2 = 2.0*3.1415926535			# 2 * PI (not squared!) 		// PI Squared
+PI2 = 2.0*PI			# 2 * PI (not squared!) 		
 PI_3 = PI/3.
-
+PI_75 = PI / 75.
+PI_4 = PI / 4.
+DEGREE = u"\xB0"
 ESCAPE = '\033'
 try:
     ESCAPEPY3 = b"\x1b"
@@ -37,7 +39,6 @@ except:
 numlayers = {3:28,4:12} # Subdet:numlayers (1 to value)
 hgcalDataFile = "hgcalDataForGL.pklz"
 zside = 1
-
 
 #global subdet
 subdet = 4 
@@ -86,10 +87,10 @@ config._keys["w"] = False
 config._keys["a"] = False
 config._keys["s"] = False
 config._keys["d"] = False
-config._keys["up"] = False
-config._keys["down"] = False
-config._keys["left"] = False
-config._keys["right"] = False
+config._keys[GLUT_KEY_UP] = False
+config._keys[GLUT_KEY_DOWN] = False
+config._keys[GLUT_KEY_LEFT] = False
+config._keys[GLUT_KEY_RIGHT] = False
 config._keys["1"] = False
 config._keys["2"] = False
 config._keys["3"] = False
@@ -97,6 +98,8 @@ config._keys["4"] = False
 config._keys["5"] = False
 config._keys["-"] = False
 config._keys["="] = False
+config._keys["["] = False
+config._keys["]"] = False
 config._keys[ESCAPE] = False
 #for i in xrange(256):
 #    _keys[i] = False
@@ -208,7 +211,7 @@ def glut_print( x,  y,  font=GLUT_BITMAP_9_BY_15 ,  text="", r=0.,  g=0. , b=0. 
 
 
 # A general OpenGL initialization function.  Sets all of the initial parameters. 
-def Initialize (Width, Height, fullscreen = False):				# We call this right after our OpenGL window is created.
+def Initialize (Width, Height):
     global g_quadratic
     LoadTextures("CMSlogo.bmp")
     glClearColor(0.0, 0.0, 0.0, 1.0)					# This Will Clear The Background Color To Black
@@ -220,7 +223,7 @@ def Initialize (Width, Height, fullscreen = False):				# We call this right afte
     glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST) 	# Really Nice Perspective Calculations
 
     # Make fullscreen
-    if fullscreen:
+    if config.fullscreen:
         glutFullScreen();
 
     g_quadratic = gluNewQuadric();
@@ -235,10 +238,11 @@ def Initialize (Width, Height, fullscreen = False):				# We call this right afte
 
     
     config.camera = Camera()
-    config.camera.set_position(v3(10, 0, -20))
+    sx,sy,sz = config.startPos
+    config.player = Spatial(position = v3(sx,sy,sz))
+    config.camera.set_position(config.player.get_position())
     config.camera.look_at(v3(0, 0, 0))
-
-    config.player = Spatial(position = v3(10.,0.,-20.))
+    config.camera.set_fov(PI/3)
 
     #glMatrixMode(GL_PROJECTION)
     #glLoadIdentity()
@@ -315,21 +319,21 @@ def ReSizeGLScene(Width, Height):
     # // field of view, aspect ratio, near and far
     # This will squash and stretch our objects as the window is resized.
     # Note that the near clip plane is 1 (hither) and the far plane is 1000 (yon)
-    gluPerspective(45.0, float(Width)/float(Height), 1, 100.0)
-
+    aspectRatio = float(Width)/float(Height)
+    #gluPerspective(45.0, apsectRatio, 1, 1000.0)
+    config.camera.set_aspect(aspectRatio)
+    glMultMatrixf(config.camera.get_projection_matrix()) 
     glMatrixMode (GL_MODELVIEW);                # // Select The Modelview Matrix
     glLoadIdentity ();                                  # // Reset The Modelview Matrix
     g_ArcBall.setBounds (Width, Height) # //*NEW* Update mouse bounds for arcball
     
     
-    global screenW
-    global screenH
-    screenW = Width
-    screenH = Height
+    #global screenW
+    #global screenH
+    #screenW = Width
+    #screenH = Height
 
 
-    global aspectRatio
-    aspectRatio = 1.0 * screenW / screenH
     
 #    print "New width:  %d" % screenW
 #    print "New height: %d" % screenH
@@ -406,43 +410,43 @@ def Mouse_PassiveDrag (mouse_dx, mouse_dy):
 
     return
 
+def KeySpecialPressed(key, x, y):
+    config._keys[key] = True
+
+    if key == GLUT_KEY_F11:
+        config.fullscreen = not config.fullscreen
+        if config.fullscreen:
+            # Switch to fullscreen
+            glutFullScreen()
+        else:
+            # Switch to windowed mode
+            glutReshapeWindow(config.screenW, config.screenH)
+            ReSizeGLScene(config.screenW, config.screenH)
+    
+    elif key == GLUT_KEY_F5:
+        config.alphaExp = max(config.alphaExp - 0.05, 0.0)
+    elif key == GLUT_KEY_F6:
+        #config.alphaExp = min(config.alphaExp + 0.05, 1.0)
+        config.alphaExp += 0.05 
+
+
+def KeySpecialUp(key, x, y):
+    config._keys[key] = False 
+
 # The function called whenever a key is pressed. Note the use of Python tuples to pass in: (key, x, y)  
 def KeyPressed(*args):
     global g_quadratic
-    # If escape is pressed, kill everything.
-#    if args[0] == ESCAPEPY3:
         
     key = str(args [0])
     #print ("str(args[0]) =", str(args[0]))
     if key[0] == "b":
         # Remove python3 string formatting characters
         key = str(key[2:-1])
-    #print("key: %s" % key)
 
-    #pprint("_keys[%s] = %s" % (key,_keys[key]))
-    #global _keys
    
-#    if key == "1" and ("1" not in _keys or _keys["1"] == False):
-#        # Key 1 just pressed
-#        global event
-#        event -= 1
-#        if event < 0:
-#            event = 9
-#
-#        selectEvent(event) 
-
-#    elif key == "2" and ("2" not in _keys or _keys["2"] == False):
-        # Key 2 just pressed
-#        global event
-#        event += 1
-#        if event > 9:
-#            event = 0
-
-#        selectEvent(event) 
     
     if key == "-":# and ("-" not in _keys or _keys["-"] == False):
         # Key - just pressed
-        #global event
         config.event -= 1
         if config.event < 0:
             config.event = 9
@@ -451,7 +455,6 @@ def KeyPressed(*args):
 			
     elif key == "=":# and ("=" not in _keys or _keys["="] == False):
         # Key = just pressed
-        #global event
         config.event += 1
         if config.event > 9:
             config.event = 0
@@ -462,7 +465,6 @@ def KeyPressed(*args):
 
     elif key == "3":# and ("3" not in config._keys or config._keys["3"] == False):
         config.subdet = 3
-        "subdet now %d" % config.subdet
     
     elif key == "4":# and ("4" not in _keys or _keys["4"] == False):
         config.subdet = 4
@@ -472,10 +474,25 @@ def KeyPressed(*args):
 
     elif key == "r":# and ("r" not in _keys or _keys["r"] == False):
         # Reset player and camera positions
-        player.set_position(v3(10., 0., -20.))
-        camera.set_position(v3(10., 0., -20.))
+        sx,sy,sz = config.startPos
+        config.player.set_position(v3(sx,sy,sz))
+        config.camera.set_position(config.camera.get_position())
+        config.camera.set_fov(PI_3)
+        config.layerSpacing = 0.5
 
+    elif key == "[":
+        config.layerSpacing = max(0.1, config.layerSpacing - 0.1)
     
+    elif key == "]":
+        config.layerSpacing += 0.1
+   
+    elif key == "h":
+        config.hitsOnly = not config.hitsOnly
+
+    elif key == "`":
+        config.debugDisplay = not config.debugDisplay 
+
+
     config._keys[key] = True
 
     #print("key == %s: " % ESCAPEPY3, key == ESCAPEPY3)
@@ -513,7 +530,7 @@ def UpdateKeys():
     #global _keys
     fwd = 0.
     strafe = 0.
-    speed = 0.5
+    speed = 0.1
 
 #    global event
 #    if "2" in _keys:
@@ -532,13 +549,13 @@ def UpdateKeys():
 #
 #        selectEvent(event)
     
-    if config._keys["w"] or config._keys["up"]:
+    if config._keys["w"] or config._keys[GLUT_KEY_UP]:
         fwd += speed
-    if config._keys["s"] or config._keys["down"]:
+    if config._keys["s"] or config._keys[GLUT_KEY_DOWN]:
         fwd -= speed
-    if config._keys["a"] or config._keys["left"]:
+    if config._keys["a"] or config._keys[GLUT_KEY_LEFT]:
         strafe += speed
-    if config._keys["d"] or config._keys["right"]:
+    if config._keys["d"] or config._keys[GLUT_KEY_RIGHT]:
         strafe -= speed
 
     x,y,z = config.player.get_position()
@@ -618,9 +635,9 @@ def Upon_Click (button, button_state, cursor_x, cursor_y):
 def mouseWheel(button, direction, x, y):
     if direction > 0.:
         # Zooming in
-        config.camera.set_fov(max(config.camera.get_fov()-0.5,0.))
+        config.camera.set_fov(max(config.camera.get_fov()-PI_75,PI_75))
     else:
-        config.camera.set_fov(min(config.camera.get_fov()+0.5,90.0))
+        config.camera.set_fov(min(config.camera.get_fov()+PI_75,PI))
 
 def Torus(MinorRadius, MajorRadius):		
     # // Draw A Torus With Normals
@@ -657,8 +674,7 @@ def DrawSquare(xoffset=0.1,yoffset=0.1, xsize = 0.4):
     glColor3f( 1, 1, 1 )
     glBegin( GL_QUADS )
     
-    global aspectRatio
-    ysize = xsize * aspectRatio 
+    ysize = xsize * config.camera.get_aspect() 
     glTexCoord2f(0.0, 0.0); glVertex3f(-1.+xoffset,  1.-yoffset-ysize,  -1.0);	# Bottom Left Of The Texture and Quad
     glTexCoord2f(1.0, 0.0); glVertex3f(-1.+xoffset+xsize,  1.-yoffset-ysize,  -1.0);	# Bottom Right Of The Texture and Quad
     glTexCoord2f(1.0, 1.0); glVertex3f(-1.+xoffset+xsize,  1.-yoffset,  -1.0);	# Top Right Of The Texture and Quad
@@ -685,13 +701,13 @@ def Hexagon(radius):
     glEnd()
     return
 
-def HexagonXYZ(x,y,z,radius):
+def HexagonXYZ(xoffset=0.,yoffset=0.,zoffset=0.,radius=0.6):
     glBegin(GL_TRIANGLE_FAN);
     for t in range(6):
         sintheta = sin(PI_3 * t)
         costheta = cos(PI_3 * t)
 
-        glVertex3f (radius * (costheta+x), radius * (sintheta+y), z)
+        glVertex3f (radius * (costheta+xoffset), radius * (sintheta+yoffset), zoffset)
         glNormal3f (0., 0., 1.)
     glEnd()
     return
@@ -778,11 +794,15 @@ def DrawWafers(_subdet=3, _layer=7, xoffset = 0., yoffset = 0., zoffset = 0., co
             r,g,b,a = color
         else:
             r,g,b,a = waferColors[event][_subdet][waferLayer][wafer]
-        
+            hexZoffset = r/5.
         if a < 1.0:
+            if config.hitsOnly:
+                # Don't draw cells with no energy deposited
+                continue
             a = 0.05    # adjust alpha of background wafers
         elif r > 0.:
-            a = max(1./(r**0.5),1.0)    # adjust alpha of signal wafers
+            #a = max(1./(r**0.5),1.0)    # adjust alpha of signal wafers
+            a = max(r**config.alphaExp,0.0)    # adjust alpha of signal wafers
         glColor4f(r,g,b,a)
 #        try:
 #            energy = df.query("tc_wafer==%d" % wafer)["tc_energy"].values[0]
@@ -790,13 +810,12 @@ def DrawWafers(_subdet=3, _layer=7, xoffset = 0., yoffset = 0., zoffset = 0., co
 #        except IndexError:
 #            # Wafer not found, set default color 
 #            glColor4f(0.05,0.75,0.75,0.2);
-
         #Torus(0.30,1.00);
         #glColor4f(0.05,0.75,0.75,0.2);
-        Hexagon(0.6);
+        HexagonXYZ(zoffset=hexZoffset,radius=0.6);
         #HexagonXYZ(x,y,z,0.6);
         #Hexagon(6.);
-       # DrawWafers()
+       # DrawWafers()i
 #        glPopMatrix();  # // NEW: Unapply Dynamic Transform
 
 
@@ -876,16 +895,18 @@ def Draw ():
     #global subdet
     if subdet == 0:
         # Display subdet 3 and 4
-        for l in range(1,41,2):
-            DrawWafers(_subdet=(3 if l <= numlayers[3] else 4), _layer=l, xoffset = -0., yoffset = 0., zoffset = -20. + 0.5*(l - 5))
+        for i,l in enumerate(range(1,41,2)):
+            #DrawWafers(_subdet=(3 if l <= numlayers[3] else 4), _layer=l, xoffset = -0., yoffset = 0., zoffset = 0. + config.layerSpacing*(l - 5))
+            DrawWafers(_subdet=(3 if l <= numlayers[3] else 4), _layer=l, xoffset = -0., yoffset = 0., zoffset = -config.layerSpacing * 10. + float(i)*config.layerSpacing)
     
     elif subdet == 3:
-        for l in range(1,29,2):
-            DrawWafers(_subdet=subdet, _layer=l, xoffset = -0., yoffset = 0., zoffset = -20. + 0.5*(l - 5))
+        for i,l in enumerate(range(1,29,2)):
+            #DrawWafers(_subdet=subdet, _layer=l, xoffset = -0., yoffset = 0., zoffset = -20. + config.layerSpacing*(l - 5))
+            DrawWafers(_subdet=subdet, _layer=l, xoffset = -0., yoffset = 0., zoffset = -config.layerSpacing * 7. + float(i)*config.layerSpacing)
     
     elif subdet == 4:
-        for l in range(29,41,2):
-            DrawWafers(_subdet=subdet, _layer=l, xoffset = -0., yoffset = 0., zoffset = -20. + 0.5*(l - 5))
+        for i,l in enumerate(range(29,41,2)):
+            DrawWafers(_subdet=subdet, _layer=l, xoffset = -0., yoffset = 0., zoffset = -config.layerSpacing * 3. + float(i)*config.layerSpacing)
 
     global g_CameraM
     glMultMatrixf(g_CameraM)
@@ -936,8 +957,7 @@ def Draw ():
     screenH = m_viewport[3]
     x,y,z = config.camera.get_position()
     #glut_print(100,700, text="Merry Christmas! Event %d  Subdet %d layer %d" % (event,subdet,layer), r=1.0)    
-    glut_print(100,550, text="Merry Christmas! Event %d" % config.event, r=1.0)    
-#    glut_print(60,440, text="Camera pos: (%.2f, %.2f, %.2f)" % (x,y,z), r=1.0)    
+    glut_print(100,550, text="Happy New Year! RelVal QCD Event %d" % config.event, r=1.0)    
 #    glut_print(60,400, text=" Width: %d" % screenW, r=1.0)    
 #    glut_print(60,380, text="Height: %d" % screenH, r=1.0)    
 #    global aspectRatio
@@ -953,7 +973,14 @@ def Draw ():
     else: 
         glut_print(100,525, text="Subdet %d" % subdet , r=0.1,g=1.0,b=0.1)    
     
-    glut_print(100,500, text="FPS: %.1f"%fps, r=0.1,g=1.0,b=0.1)    
+    if config.debugDisplay:
+        glut_print(100,500, text="FPS: %.1f"%fps, r=0.1,g=1.0,b=0.1)    
+        glut_print(100,475, text="Camera pos: (%.2f, %.2f, %.2f)" % (x,y,z), g=1.0)    
+        glut_print(100,450, text="FOV: %.1f%s" % (config.camera.get_fov()*180./PI, DEGREE), r=0.1,g=1.0,b=0.1)
+        glut_print(100,425, text="Spacing: %.1f" % config.layerSpacing, r=0.1,g=1.0,b=0.1)
+        glut_print(100,400, text="hitsOnly: %s" % config.hitsOnly, r=0.1,g=1.0,b=0.1)
+        glut_print(100,375, text="alphaExp: %.2f" % config.alphaExp, r=0.1,g=1.0,b=0.1)
+    
 
     glFlush ();		    # // Flush The GL Rendering Pipeline
     glutSwapBuffers()

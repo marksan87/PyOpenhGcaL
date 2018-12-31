@@ -15,7 +15,7 @@ from GLdefs import *
 from camera.camera import Camera
 from camera.spatial import Spatial
 from globals import *
-from config import *
+import config
 
 # Some api in the chain is translating the keystrokes to this octal string
 # so instead of saying: ESCAPE = 27, we use the following.
@@ -135,6 +135,9 @@ def main(fullscreen = False):
     # pass arguments to init
     glutInit(sys.argv)
 
+    if fullscreen:
+        # Force full screen
+        config.fullscreen = True
     #cell_map, tc_map = LoadGeometry()
     
     # Select type of Display mode:   
@@ -147,7 +150,7 @@ def main(fullscreen = False):
     # get a 640 x 480 window 
     #glutInitWindowSize(640, 480)
     #glutInitWindowSize(1024, 768)
-    glutInitWindowSize(800,600)
+    glutInitWindowSize(config.screenW,config.screenH)
     
     # the window starts at the upper left corner of the screen 
     glutInitWindowPosition(0, 0)
@@ -179,7 +182,11 @@ def main(fullscreen = False):
     # Register the function called when a key is released 
     glutKeyboardUpFunc(KeyUp)
 
+    # Register callback for when speical key (arrow, function, etc) is pressed
+    glutSpecialFunc(KeySpecialPressed)    
     
+    # Register callback for when speical key (arrow, function, etc) is released 
+    glutSpecialUpFunc(KeySpecialUp)    
 
     # GLUT When mouse buttons are clicked in window
     glutMouseFunc (Upon_Click)
@@ -201,7 +208,7 @@ def main(fullscreen = False):
     #Initialize (640, 480)
     #Initialize (1600, 1200)
     #Initialize (1024, 768, fullscreen)
-    Initialize (800, 600, fullscreen)
+    Initialize (config.screenW, config.screenH)
 
     # Start Event Processing Engine	
     glutMainLoop()
@@ -213,4 +220,4 @@ if __name__ == "__main__":
     parser.add_argument("-fs", dest="fullscreen", action="store_true", default=False, help="fullscreen mode")
     args = parser.parse_args()
     main(fullscreen = args.fullscreen)
-
+    
