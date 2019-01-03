@@ -39,7 +39,7 @@ except:
     ESCAPEPY3 = "000"
 
 numlayers = {3:28,4:12} # Subdet:numlayers (1 to value)
-hgcalDataFile = "hgcalDataForGL.pklz"
+hgcalDataFile = "data/hgcalDataForGL.pklz"
 zside = 1
 
 #global subdet
