@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import division
+from datetime import datetime
 from camera.camera import Camera
 from camera.spatial import Spatial
 from camera.vecmath import * 
@@ -7,6 +8,7 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from PIL import Image
+import os
 import sys
 import copy
 import numpy as np
@@ -169,7 +171,6 @@ def LoadTextures(imgF):
     except AttributeError:
         pass
     
-    #image = imgOpen("NeHe.bmp")
     image = Image.open(imgF)
 	
     ix = image.size[0]
@@ -371,7 +372,36 @@ def ReSizeGLScene(Width, Height):
 
 #    return
     
-
+def ScreenShot(outDir="",filename=""):
+    if outDir == "":
+        outDir = "screenshots"
+    if outDir[-1] == "/":
+        outDir = outDir[:-1]
+    if filename == "":
+        filename = "screenshot_%s.jpg" % datetime.now().strftime("%m%d%y_%I%M%S")
+    m_viewport = np.array([0]*4,dtype=np.int32)
+    glGetIntegerv( GL_VIEWPORT, m_viewport );
+    screenW = m_viewport[2]
+    screenH = m_viewport[3]
+   
+    try:
+        os.mkdir(outDir)
+    except OSError as e:
+        print("e=",e)
+        if "exists" not in str(e):
+            print("Unable to create screenshot directory")
+            
+    glReadBuffer(GL_FRONT)
+    pixels = glReadPixels(0,0,screenW,screenH,GL_RGB,GL_UNSIGNED_BYTE)
+    try:
+        image = Image.fromstring("RGB", (screenW, screenH), pixels)
+    except NotImplementedError: 
+        image = Image.frombytes("RGB", (screenW, screenH), pixels)
+    image = image.transpose( Image.FLIP_TOP_BOTTOM)
+    
+    image.save("%s/%s" % (outDir,filename))
+    print("Screen saved to %s" % outDir)
+    return
 
 def Mouse_PassiveDrag (mouse_dx, mouse_dy):
     """ Mouse cursor is moving but no buttons are pressed
@@ -428,7 +458,8 @@ def KeySpecialPressed(key, x, y):
     elif key == GLUT_KEY_F6:
         #config.alphaExp = min(config.alphaExp + 0.05, 1.0)
         config.alphaExp += 0.05 
-
+    elif key == GLUT_KEY_F12:
+        ScreenShot()
 
 def KeySpecialUp(key, x, y):
     config._keys[key] = False 
@@ -442,7 +473,6 @@ def KeyPressed(*args):
     if key[0] == "b":
         # Remove python3 string formatting characters
         key = str(key[2:-1])
-
    
     
     if key == "-":# and ("-" not in _keys or _keys["-"] == False):
@@ -451,17 +481,13 @@ def KeyPressed(*args):
         if config.event < 0:
             config.event = 9
 
-        #selectEvent(event) 
-			
+
     elif key == "=":# and ("=" not in _keys or _keys["="] == False):
         # Key = just pressed
         config.event += 1
         if config.event > 9:
             config.event = 0
 
-        #selectEvent(event) 
-
-    
 
     elif key == "3":# and ("3" not in config._keys or config._keys["3"] == False):
         config.subdet = 3
@@ -481,10 +507,10 @@ def KeyPressed(*args):
         config.layerSpacing = 0.5
 
     elif key == "[":
-        config.layerSpacing = max(0.1, config.layerSpacing - 0.1)
+        config.layerSpacing = max(0.1, config.layerSpacing - 0.2)
     
     elif key == "]":
-        config.layerSpacing += 0.1
+        config.layerSpacing += 0.2
    
     elif key == "h":
         config.hitsOnly = not config.hitsOnly
